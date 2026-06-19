@@ -63,50 +63,41 @@
         .bubble {
             position: absolute;
             bottom: -160px;
-            padding: 16px 22px;
+            padding: 14px 20px;
             font-size: 15px;
             line-height: 1.6;
-            max-width: 210px;
-            min-width: 80px;
+            max-width: 190px;
+            min-width: 70px;
             text-align: center;
             animation: floatUp var(--duration) linear forwards;
             pointer-events: auto;
             cursor: default;
             transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
             word-break: break-all;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
 
         .bubble:hover {
-            transform: scale(1.15) !important;
+            transform: scale(1.12) !important;
             z-index: 100;
             filter: brightness(1.08);
         }
 
-        /* 飘动动画 - 带左右摇摆 */
+        /* 飘动动画 - 简化关键帧，减少重绘 */
         @keyframes floatUp {
             0% {
                 opacity: 0;
                 transform: translateY(0) scale(0.5) rotate(0deg);
             }
-            6% {
+            8% {
                 opacity: 1;
-                transform: translateY(-30px) scale(1) rotate(var(--rot));
-            }
-            25% {
-                transform: translateY(calc(-25vh)) rotate(calc(var(--rot) - 2deg));
-            }
-            50% {
-                transform: translateY(calc(-50vh)) rotate(calc(var(--rot) + 2deg));
-            }
-            75% {
-                transform: translateY(calc(-75vh)) rotate(calc(var(--rot) - 1.5deg));
-            }
-            88% {
-                opacity: 1;
+                transform: translateY(-40px) scale(1) rotate(var(--rot));
             }
             100% {
                 opacity: 0;
-                transform: translateY(calc(-100vh - 180px)) scale(0.8) rotate(var(--rot));
+                transform: translateY(calc(-100vh - 180px)) scale(0.8) rotate(calc(var(--rot) * 1.5));
             }
         }
 
@@ -570,10 +561,11 @@
             width: 4px;
             height: 4px;
             border-radius: 50%;
-            background: rgba(255, 209, 102, 0.4);
+            background: rgba(255, 209, 102, 0.35);
             z-index: 1;
             animation: particleFloat var(--p-duration) ease-in-out infinite;
             pointer-events: none;
+            will-change: transform, opacity;
         }
 
         @keyframes particleFloat {
@@ -745,11 +737,16 @@
             bubble.style.animationDelay = delay + "s";
             bubbleContainer.appendChild(bubble);
             bubble.addEventListener("animationend", function () { bubble.remove(); });
+
+            // 限制屏幕中最大气泡数量，避免过多导致卡顿
+            while (bubbleContainer.children.length > 25) {
+                bubbleContainer.firstElementChild.remove();
+            }
         }
 
         // ========== 装饰粒子 ==========
         function createParticles() {
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 12; i++) {
                 const p = document.createElement("div");
                 p.className = "particle";
                 p.style.left = randomBetween(0, 100) + "%";
@@ -843,7 +840,7 @@
             var allMessages = PRESET_MESSAGES.concat(cloudMessages);
             setInterval(function () {
                 createBubble(allMessages[Math.floor(Math.random() * allMessages.length)], 0);
-            }, 2800);
+            }, 4000);
         }
 
         loadCloudMessages();
