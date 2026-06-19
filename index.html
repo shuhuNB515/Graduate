@@ -646,7 +646,14 @@
     <!-- 提交成功提示 -->
     <div class="toast" id="toast">寄语已飘向星空 ✨</div>
 
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+        // ========== Supabase 配置 ==========
+        const SUPABASE_URL = 'https://bkutocmyewjipbwyavyp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_oOPken_dyGRVzy1yOsvd1g_JkN-xJu3';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         // ========== 配置 ==========
         const MAX_CHAR = 30;
 
@@ -836,7 +843,7 @@
         });
 
         // 提交寄语
-        btnSubmit.addEventListener("click", function () {
+        btnSubmit.addEventListener("click", async function () {
             var text = msgInput.value.trim();
             if (!text) {
                 msgInput.style.borderColor = "rgba(255, 107, 107, 0.7)";
@@ -845,11 +852,15 @@
                 }, 1000);
                 return;
             }
-            // 保存到 localStorage
-            saveMessage(text);
             closeModal();
             createBubble(text, 0);
             showToast();
+            // 保存到 Supabase
+            try {
+                await supabase.from('messages').insert([{ text: text }]);
+            } catch (e) {
+                console.error('保存失败:', e);
+            }
         });
 
         // 键盘快捷键：Enter 提交，Esc 关闭
@@ -864,51 +875,47 @@
             if (e.key === "Escape") closeModal();
         });
 
-        // ========== localStorage 存储 ==========
-        var STORAGE_KEY = "graduation_messages";
-
-        function getSavedMessages() {
-            try {
-                var data = localStorage.getItem(STORAGE_KEY);
-                return data ? JSON.parse(data) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveMessage(text) {
-            var messages = getSavedMessages();
-            messages.push({ text: text, time: Date.now() });
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-            } catch (e) {
-                // 存储满了就只保留最近50条
-                messages = messages.slice(-50);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-            }
-        }
-
         // ========== 初始化 ==========
         // 生成装饰粒子
         createParticles();
 
-        // 先展示用户保存的寄语
-        var savedMsgs = getSavedMessages();
-        savedMsgs.forEach(function (item, i) {
-            createBubble(item.text, i * 1.0);
-        });
+        // 从 Supabase 加载历史寄语
+        var cloudMessages = []; // 存放云端寄语文本
 
-        // 预置寄语：错开时间依次出现
-        PRESET_MESSAGES.forEach(function (msg, i) {
-            createBubble(msg, (savedMsgs.length + i) * 1.0 + 0.5);
-        });
+        async function loadCloudMessages() {
+            try {
+                var { data, error } = await supabase
+                    .from('messages')
+                    .select('text')
+                    .order('created_at', { ascending: true })
+                    .limit(100);
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    cloudMessages = data.map(function (m) { return m.text; });
+                    // 展示云端寄语
+                    cloudMessages.forEach(function (text, i) {
+                        createBubble(text, i * 0.8);
+                    });
+                }
+            } catch (e) {
+                console.warn('云端加载失败，使用预置寄语:', e.message);
+            }
 
-        // 持续循环补充寄语（预置+用户保存的），保持画面不空
-        var allMessages = PRESET_MESSAGES.concat(savedMsgs.map(function (m) { return m.text; }));
-        setInterval(function () {
-            var idx = Math.floor(Math.random() * allMessages.length);
-            createBubble(allMessages[idx], 0);
-        }, 2800);
+            // 预置寄语：在云端寄语之后出现
+            var baseDelay = cloudMessages.length > 0 ? cloudMessages.length * 0.8 + 0.5 : 0;
+            PRESET_MESSAGES.forEach(function (msg, i) {
+                createBubble(msg, baseDelay + i * 1.0);
+            });
+
+            // 持续循环补充寄语（预置+云端），保持画面不空
+            var allMessages = PRESET_MESSAGES.concat(cloudMessages);
+            setInterval(function () {
+                var idx = Math.floor(Math.random() * allMessages.length);
+                createBubble(allMessages[idx], 0);
+            }, 2800);
+        }
+
+        loadCloudMessages();
     </script>
 </body>
 </html>
