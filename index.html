@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>"易"起毕业，青春不散 · 数字留言墙</title>
+    <style>
+        /* ========== 基础重置 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+        }
+
+        /* ========== 底层：校园印象层 ========== */
+        .bg-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url("1.jpeg") center center / cover no-repeat;
+            /* 无背景图时的渐变备选 */
+            background-image: url("1.jpeg"), linear-gradient(135deg, #0a192f 0%, #1a2a5e 50%, #0d1b3e 100%);
+            background-color: #0a192f;
+            animation: bgFadeIn 2s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes bgFadeIn {
+            to { opacity: 1; }
+        }
+
+        /* 深色遮罩 */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(
+                135deg,
+                rgba(10, 25, 47, 0.72) 0%,
+                rgba(20, 30, 70, 0.65) 50%,
+                rgba(10, 25, 47, 0.78) 100%
+            );
+            z-index: 1;
+        }
+
+        /* ========== 中层：寄语展示区 ========== */
+        .bubble-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ========== 气泡基础样式 ========== */
+        .bubble {
+            position: absolute;
+            bottom: -160px;
+            padding: 16px 22px;
+            font-size: 15px;
+            line-height: 1.6;
+            max-width: 210px;
+            min-width: 80px;
+            text-align: center;
+            animation: floatUp var(--duration) linear forwards;
+            pointer-events: auto;
+            cursor: default;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+            word-break: break-all;
+        }
+
+        .bubble:hover {
+            transform: scale(1.15) !important;
+            z-index: 100;
+            filter: brightness(1.08);
+        }
+
+        /* 飘动动画 - 带左右摇摆 */
+        @keyframes floatUp {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(0.5) rotate(0deg);
+            }
+            6% {
+                opacity: 1;
+                transform: translateY(-30px) scale(1) rotate(var(--rot));
+            }
+            25% {
+                transform: translateY(calc(-25vh)) rotate(calc(var(--rot) - 2deg));
+            }
+            50% {
+                transform: translateY(calc(-50vh)) rotate(calc(var(--rot) + 2deg));
+            }
+            75% {
+                transform: translateY(calc(-75vh)) rotate(calc(var(--rot) - 1.5deg));
+            }
+            88% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(calc(-100vh - 180px)) scale(0.8) rotate(var(--rot));
+            }
+        }
+
+        /* ========== 样式1：手账便签 ========== */
+        .bubble-note {
+            background: var(--b-bg);
+            color: var(--b-text);
+            border-radius: 4px;
+            box-shadow: 2px 3px 12px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.1);
+            position: relative;
+            padding: 18px 18px 14px;
+        }
+        .bubble-note::before {
+            content: "";
+            position: absolute;
+            top: 0; right: 0;
+            width: 0; height: 0;
+            border-style: solid;
+            border-width: 0 22px 22px 0;
+            border-color: transparent rgba(10,25,47,0.5) transparent transparent;
+            border-radius: 0 4px 0 0;
+        }
+        .bubble-note::after {
+            content: "";
+            position: absolute;
+            top: 6px; left: 50%;
+            transform: translateX(-50%);
+            width: 36px;
+            height: 8px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 2px;
+        }
+        .bubble-note:hover {
+            box-shadow: 4px 6px 24px rgba(0,0,0,0.22);
+        }
+
+        /* ========== 样式2：圆形气泡 ========== */
+        .bubble-circle {
+            background: var(--b-bg);
+            color: var(--b-text);
+            border-radius: 50%;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.12), inset 0 -4px 12px rgba(255,255,255,0.15);
+            font-size: 13px;
+        }
+        .bubble-circle::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--b-bg);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .bubble-circle:hover {
+            box-shadow: 0 10px 36px rgba(0,0,0,0.2), inset 0 -4px 12px rgba(255,255,255,0.2);
+        }
+
+        /* ========== 样式3：玻璃卡片 ========== */
+        .bubble-glass {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1.5px solid rgba(255,255,255,0.3);
+            border-radius: 16px;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+        .bubble-glass:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        /* ========== 样式4：贴纸标签 ========== */
+        .bubble-sticker {
+            background: var(--b-bg);
+            color: var(--b-text);
+            border-radius: 20px;
+            padding: 14px 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            position: relative;
+            border: 2px dashed rgba(0,0,0,0.08);
+        }
+        .bubble-sticker::before {
+            content: "📌";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+        }
+        .bubble-sticker:hover {
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+            border-color: rgba(0,0,0,0.15);
+        }
+
+        /* ========== 样式5：纸飞机 ========== */
+        .bubble-plane {
+            background: var(--b-bg);
+            color: var(--b-text);
+            border-radius: 14px 14px 14px 4px;
+            padding: 14px 20px 14px 18px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+            position: relative;
+        }
+        .bubble-plane::after {
+            content: "✈";
+            position: absolute;
+            top: -8px;
+            right: -6px;
+            font-size: 18px;
+            transform: rotate(-30deg);
+            opacity: 0.7;
+        }
+        .bubble-plane:hover {
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+        }
+
+        /* ========== 样式6：云朵 ========== */
+        .bubble-cloud {
+            background: var(--b-bg);
+            color: var(--b-text);
+            border-radius: 30px;
+            padding: 16px 24px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .bubble-cloud::before {
+            content: "";
+            position: absolute;
+            bottom: -6px;
+            left: 24px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--b-bg);
+            box-shadow: 14px 4px 0 4px var(--b-bg);
+        }
+        .bubble-cloud:hover {
+            box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+        }
+
+        /* ========== 样式7：星星 ========== */
+        .bubble-star {
+            background: var(--b-bg);
+            color: var(--b-text);
+            border-radius: 14px;
+            padding: 14px 20px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+            position: relative;
+        }
+        .bubble-star::before {
+            content: "⭐";
+            position: absolute;
+            top: -10px;
+            left: -6px;
+            font-size: 16px;
+        }
+        .bubble-star::after {
+            content: "🌟";
+            position: absolute;
+            bottom: -8px;
+            right: -4px;
+            font-size: 14px;
+        }
+        .bubble-star:hover {
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+        }
+
+        /* ========== 样式8：渐变卡片 ========== */
+        .bubble-gradient {
+            border-radius: 16px;
+            padding: 16px 22px;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .bubble-gradient:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+        }
+
+        /* ========== 顶层：标题与交互区 ========== */
+        .ui-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        /* 标题区 */
+        .title-area {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: titleSlideIn 1.5s ease-out 0.5s both;
+        }
+
+        @keyframes titleSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .title-area h1 {
+            font-size: 42px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 6px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+            margin-bottom: 12px;
+        }
+
+        .title-area h1 span {
+            color: #ffd166;
+        }
+
+        .title-area p {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.75);
+            letter-spacing: 3px;
+            font-weight: 300;
+        }
+
+        /* 留下寄语按钮 - 玻璃拟态 */
+        .btn-leave {
+            pointer-events: auto;
+            padding: 16px 48px;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: btnPulse 3s ease-in-out infinite;
+        }
+
+        .btn-leave:hover {
+            background: rgba(255, 255, 255, 0.28);
+            transform: scale(1.08);
+            box-shadow: 0 8px 36px rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.55);
+        }
+
+        .btn-leave:active {
+            transform: scale(0.97);
+        }
+
+        @keyframes btnPulse {
+            0%, 100% { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15); }
+            50% { box-shadow: 0 4px 36px rgba(255, 209, 102, 0.3); }
+        }
+
+        /* 底部提示 */
+        .footer-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+            letter-spacing: 2px;
+            pointer-events: none;
+        }
+
+        /* ========== 弹窗 Modal ========== */
+        .modal-mask {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(5, 10, 30, 0.6);
+            backdrop-filter: blur(6px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        .modal-mask.active {
+            display: flex;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-card {
+            width: 400px;
+            max-width: 90vw;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 36px 32px 28px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+            animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-card h2 {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .modal-card .modal-sub {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-card textarea {
+            width: 100%;
+            height: 100px;
+            padding: 14px 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s;
+            line-height: 1.6;
+        }
+
+        .modal-card textarea::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .modal-card textarea:focus {
+            border-color: rgba(255, 209, 102, 0.6);
+        }
+
+        .char-count {
+            text-align: right;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+            margin-top: 6px;
+            margin-bottom: 20px;
+        }
+
+        .char-count.warn {
+            color: #ff6b6b;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btns button {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #ffd166 0%, #ffb347 100%);
+            color: #2c2c2c;
+            font-weight: 600;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(255, 209, 102, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* ========== 提交成功提示 ========== */
+        .toast {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-size: 15px;
+            letter-spacing: 2px;
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ========== 装饰粒子 ========== */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255, 209, 102, 0.4);
+            z-index: 1;
+            animation: particleFloat var(--p-duration) ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes particleFloat {
+            0%, 100% {
+                transform: translate(0, 0);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translate(var(--p-dx), var(--p-dy));
+                opacity: 0.7;
+            }
+        }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 600px) {
+            .title-area h1 {
+                font-size: 28px;
+                letter-spacing: 3px;
+            }
+            .title-area p {
+                font-size: 13px;
+            }
+            .btn-leave {
+                padding: 12px 36px;
+                font-size: 16px;
+            }
+            .modal-card {
+                padding: 28px 20px 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 底层：校园背景 -->
+    <div class="bg-layer"></div>
+    <div class="overlay"></div>
+
+    <!-- 装饰粒子（JS 动态生成） -->
+
+    <!-- 中层：寄语气泡容器 -->
+    <div class="bubble-container" id="bubbleContainer"></div>
+
+    <!-- 顶层：标题与交互 -->
+    <div class="ui-layer">
+        <div class="title-area">
+            <h1>"<span>易</span>"起毕业，青春不散</h1>
+            <p>绵阳师范学院 · 数字留言墙</p>
+        </div>
+        <button class="btn-leave" id="btnLeave">留下寄语</button>
+    </div>
+
+    <!-- 底部提示 -->
+    <div class="footer-hint">点击寄语气泡可查看详情 · 愿此去繁花似锦</div>
+
+    <!-- 弹窗 -->
+    <div class="modal-mask" id="modalMask">
+        <div class="modal-card">
+            <h2>写下你的寄语</h2>
+            <p class="modal-sub">那些来不及说的话，让风替你传达</p>
+            <textarea id="msgInput" maxlength="30" placeholder="毕业快乐、未来可期..."></textarea>
+            <div class="char-count"><span id="charNum">0</span> / 30</div>
+            <div class="modal-btns">
+                <button class="btn-cancel" id="btnCancel">取消</button>
+                <button class="btn-submit" id="btnSubmit">确认发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交成功提示 -->
+    <div class="toast" id="toast">寄语已飘向星空 ✨</div>
+
+    <script>
+        // ========== 配置 ==========
+        const MAX_CHAR = 30;
+
+        // 马卡龙色系
+        const MACARON_COLORS = [
+            { bg: "rgba(255, 182, 193, 0.82)", text: "#6b3a4a" },  // 淡粉
+            { bg: "rgba(173, 216, 230, 0.82)", text: "#2c4a5a" },  // 淡青
+            { bg: "rgba(255, 223, 140, 0.82)", text: "#6b5520" },  // 暖黄
+            { bg: "rgba(200, 180, 230, 0.82)", text: "#4a3a6b" },  // 浅紫
+            { bg: "rgba(180, 238, 200, 0.82)", text: "#2a5a3a" },  // 薄荷绿
+            { bg: "rgba(255, 200, 140, 0.82)", text: "#6b4520" },  // 蜜桃橙
+            { bg: "rgba(190, 220, 255, 0.82)", text: "#2a3a6b" },  // 天蓝
+            { bg: "rgba(240, 190, 220, 0.82)", text: "#6b2a4a" },  // 樱花粉
+        ];
+
+        // 渐变色系（用于渐变卡片）
+        const GRADIENT_COLORS = [
+            "linear-gradient(135deg, #f6a5c0 0%, #ee9ca7 100%)",
+            "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)",
+            "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
+            "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+            "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)",
+            "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+            "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        ];
+
+        // 气泡样式类型
+        const BUBLE_TYPES = [
+            "bubble-note",      // 手账便签
+            "bubble-circle",    // 圆形气泡
+            "bubble-glass",     // 玻璃卡片
+            "bubble-sticker",   // 贴纸标签
+            "bubble-plane",     // 纸飞机
+            "bubble-cloud",     // 云朵
+            "bubble-star",      // 星星
+            "bubble-gradient",  // 渐变卡片
+        ];
+
+        // 预置寄语
+        const PRESET_MESSAGES = [
+            "毕业快乐！",
+            "未来可期！",
+            "愿此去繁花似锦",
+            "再见，绵师",
+            "青春不散场",
+            "前程似锦",
+            "友谊长存",
+            "不说再见",
+            "归来仍是少年",
+            "一路顺风",
+            "顶峰相见",
+            "后会有期",
+            "闪闪发光",
+            "永远年轻",
+            "各自安好"
+        ];
+
+        // ========== DOM 引用 ==========
+        const bubbleContainer = document.getElementById("bubbleContainer");
+        const btnLeave = document.getElementById("btnLeave");
+        const modalMask = document.getElementById("modalMask");
+        const msgInput = document.getElementById("msgInput");
+        const charNum = document.getElementById("charNum");
+        const btnCancel = document.getElementById("btnCancel");
+        const btnSubmit = document.getElementById("btnSubmit");
+        const toast = document.getElementById("toast");
+
+        // ========== 工具函数 ==========
+        function randomBetween(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function randomColor() {
+            return MACARON_COLORS[Math.floor(Math.random() * MACARON_COLORS.length)];
+        }
+
+        function randomType() {
+            return BUBLE_TYPES[Math.floor(Math.random() * BUBLE_TYPES.length)];
+        }
+
+        // ========== 创建气泡 ==========
+        function createBubble(text, delay) {
+            delay = delay || 0;
+            var type = randomType();
+            var color = randomColor();
+            var bubble = document.createElement("div");
+            bubble.className = "bubble " + type;
+            bubble.textContent = text;
+
+            // 随机水平位置（1% ~ 92%），让左右两边也有气泡
+            var leftPos = randomBetween(1, 92);
+            bubble.style.left = leftPos + "%";
+
+            // 随机动画时长（12s ~ 24s）
+            var duration = randomBetween(12, 24);
+            bubble.style.setProperty("--duration", duration + "s");
+
+            // 随机旋转角度
+            var rot = randomBetween(-6, 6);
+            bubble.style.setProperty("--rot", rot + "deg");
+
+            // 随机大小微调
+            var scale = randomBetween(0.88, 1.08);
+            bubble.style.fontSize = (15 * scale) + "px";
+
+            // 根据类型设置颜色
+            if (type === "bubble-glass") {
+                // 玻璃卡片不需要背景色，自带半透明
+            } else if (type === "bubble-gradient") {
+                // 渐变卡片使用渐变色
+                var gradIdx = Math.floor(Math.random() * GRADIENT_COLORS.length);
+                bubble.style.background = GRADIENT_COLORS[gradIdx];
+            } else {
+                // 其他样式使用马卡龙色
+                bubble.style.setProperty("--b-bg", color.bg);
+                bubble.style.color = color.text;
+            }
+
+            // 延迟出现
+            bubble.style.animationDelay = delay + "s";
+
+            bubbleContainer.appendChild(bubble);
+
+            // 动画结束后移除
+            bubble.addEventListener("animationend", function () {
+                bubble.remove();
+            });
+        }
+
+        // ========== 装饰粒子 ==========
+        function createParticles() {
+            for (let i = 0; i < 20; i++) {
+                const p = document.createElement("div");
+                p.className = "particle";
+                p.style.left = randomBetween(0, 100) + "%";
+                p.style.top = randomBetween(0, 100) + "%";
+                p.style.width = randomBetween(2, 5) + "px";
+                p.style.height = p.style.width;
+                p.style.setProperty("--p-duration", randomBetween(4, 10) + "s");
+                p.style.setProperty("--p-dx", randomBetween(-30, 30) + "px");
+                p.style.setProperty("--p-dy", randomBetween(-30, 30) + "px");
+                p.style.animationDelay = randomBetween(0, 5) + "s";
+                document.body.appendChild(p);
+            }
+        }
+
+        // ========== 弹窗控制 ==========
+        function openModal() {
+            modalMask.classList.add("active");
+            msgInput.value = "";
+            charNum.textContent = "0";
+            charNum.parentElement.classList.remove("warn");
+            setTimeout(function () { msgInput.focus(); }, 300);
+        }
+
+        function closeModal() {
+            modalMask.classList.remove("active");
+        }
+
+        function showToast(msg) {
+            toast.textContent = msg || "寄语已飘向星空 ✨";
+            toast.classList.add("show");
+            setTimeout(function () {
+                toast.classList.remove("show");
+            }, 2200);
+        }
+
+        // ========== 事件绑定 ==========
+        btnLeave.addEventListener("click", openModal);
+        btnCancel.addEventListener("click", closeModal);
+
+        // 点击遮罩关闭
+        modalMask.addEventListener("click", function (e) {
+            if (e.target === modalMask) closeModal();
+        });
+
+        // 字数统计
+        msgInput.addEventListener("input", function () {
+            var len = msgInput.value.length;
+            charNum.textContent = len;
+            if (len >= MAX_CHAR) {
+                charNum.parentElement.classList.add("warn");
+            } else {
+                charNum.parentElement.classList.remove("warn");
+            }
+        });
+
+        // 提交寄语
+        btnSubmit.addEventListener("click", function () {
+            var text = msgInput.value.trim();
+            if (!text) {
+                msgInput.style.borderColor = "rgba(255, 107, 107, 0.7)";
+                setTimeout(function () {
+                    msgInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                }, 1000);
+                return;
+            }
+            // 保存到 localStorage
+            saveMessage(text);
+            closeModal();
+            createBubble(text, 0);
+            showToast();
+        });
+
+        // 键盘快捷键：Enter 提交，Esc 关闭
+        msgInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                btnSubmit.click();
+            }
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") closeModal();
+        });
+
+        // ========== localStorage 存储 ==========
+        var STORAGE_KEY = "graduation_messages";
+
+        function getSavedMessages() {
+            try {
+                var data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveMessage(text) {
+            var messages = getSavedMessages();
+            messages.push({ text: text, time: Date.now() });
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+            } catch (e) {
+                // 存储满了就只保留最近50条
+                messages = messages.slice(-50);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+            }
+        }
+
+        // ========== 初始化 ==========
+        // 生成装饰粒子
+        createParticles();
+
+        // 先展示用户保存的寄语
+        var savedMsgs = getSavedMessages();
+        savedMsgs.forEach(function (item, i) {
+            createBubble(item.text, i * 1.0);
+        });
+
+        // 预置寄语：错开时间依次出现
+        PRESET_MESSAGES.forEach(function (msg, i) {
+            createBubble(msg, (savedMsgs.length + i) * 1.0 + 0.5);
+        });
+
+        // 持续循环补充寄语（预置+用户保存的），保持画面不空
+        var allMessages = PRESET_MESSAGES.concat(savedMsgs.map(function (m) { return m.text; }));
+        setInterval(function () {
+            var idx = Math.floor(Math.random() * allMessages.length);
+            createBubble(allMessages[idx], 0);
+        }, 2800);
+    </script>
+</body>
+</html>
