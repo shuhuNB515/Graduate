@@ -650,26 +650,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
     <script>
-        // ========== Supabase 配置 ==========
-        const SUPABASE_URL = 'https://bkutocmyewjipbwyavyp.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdXRvY215ZXdqaXBid3lhdnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzE5ODYsImV4cCI6MjA5NzQwNzk4Nn0.v6Rw9ti6J9qP1JEHf4tXp4p2CjaZv8Sms1TG83wwyeo';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         // ========== 配置 ==========
         const MAX_CHAR = 30;
 
         // 马卡龙色系
         const MACARON_COLORS = [
-            { bg: "rgba(255, 182, 193, 0.82)", text: "#6b3a4a" },  // 淡粉
-            { bg: "rgba(173, 216, 230, 0.82)", text: "#2c4a5a" },  // 淡青
-            { bg: "rgba(255, 223, 140, 0.82)", text: "#6b5520" },  // 暖黄
-            { bg: "rgba(200, 180, 230, 0.82)", text: "#4a3a6b" },  // 浅紫
-            { bg: "rgba(180, 238, 200, 0.82)", text: "#2a5a3a" },  // 薄荷绿
-            { bg: "rgba(255, 200, 140, 0.82)", text: "#6b4520" },  // 蜜桃橙
-            { bg: "rgba(190, 220, 255, 0.82)", text: "#2a3a6b" },  // 天蓝
-            { bg: "rgba(240, 190, 220, 0.82)", text: "#6b2a4a" },  // 樱花粉
+            { bg: "rgba(255, 182, 193, 0.82)", text: "#6b3a4a" },
+            { bg: "rgba(173, 216, 230, 0.82)", text: "#2c4a5a" },
+            { bg: "rgba(255, 223, 140, 0.82)", text: "#6b5520" },
+            { bg: "rgba(200, 180, 230, 0.82)", text: "#4a3a6b" },
+            { bg: "rgba(180, 238, 200, 0.82)", text: "#2a5a3a" },
+            { bg: "rgba(255, 200, 140, 0.82)", text: "#6b4520" },
+            { bg: "rgba(190, 220, 255, 0.82)", text: "#2a3a6b" },
+            { bg: "rgba(240, 190, 220, 0.82)", text: "#6b2a4a" },
         ];
 
-        // 渐变色系（用于渐变卡片）
         const GRADIENT_COLORS = [
             "linear-gradient(135deg, #f6a5c0 0%, #ee9ca7 100%)",
             "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)",
@@ -681,36 +676,33 @@
             "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         ];
 
-        // 气泡样式类型
         const BUBLE_TYPES = [
-            "bubble-note",      // 手账便签
-            "bubble-circle",    // 圆形气泡
-            "bubble-glass",     // 玻璃卡片
-            "bubble-sticker",   // 贴纸标签
-            "bubble-plane",     // 纸飞机
-            "bubble-cloud",     // 云朵
-            "bubble-star",      // 星星
-            "bubble-gradient",  // 渐变卡片
+            "bubble-note", "bubble-circle", "bubble-glass", "bubble-sticker",
+            "bubble-plane", "bubble-cloud", "bubble-star", "bubble-gradient",
         ];
 
-        // 预置寄语
         const PRESET_MESSAGES = [
-            "毕业快乐！",
-            "未来可期！",
-            "愿此去繁花似锦",
-            "再见，绵师",
-            "青春不散场",
-            "前程似锦",
-            "友谊长存",
-            "不说再见",
-            "归来仍是少年",
-            "一路顺风",
-            "顶峰相见",
-            "后会有期",
-            "闪闪发光",
-            "永远年轻",
-            "各自安好"
+            "毕业快乐！", "未来可期！", "愿此去繁花似锦", "再见，绵师",
+            "青春不散场", "前程似锦", "友谊长存", "不说再见",
+            "归来仍是少年", "一路顺风", "顶峰相见", "后会有期",
+            "闪闪发光", "永远年轻", "各自安好"
         ];
+
+        // ========== Supabase（可选，失败不影响核心功能）==========
+        var db = null;
+        try {
+            if (window.supabase) {
+                db = window.supabase.createClient(
+                    'https://bkutocmyewjipbwyavyp.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdXRvY215ZXdqaXBid3lhdnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzE5ODYsImV4cCI6MjA5NzQwNzk4Nn0.v6Rw9ti6J9qP1JEHf4tXp4p2CjaZv8Sms1TG83wwyeo'
+                );
+                console.log('Supabase 连接成功');
+            } else {
+                console.warn('Supabase SDK 未加载，使用离线模式');
+            }
+        } catch (e) {
+            console.warn('Supabase 初始化失败，使用离线模式:', e.message);
+        }
 
         // ========== DOM 引用 ==========
         const bubbleContainer = document.getElementById("bubbleContainer");
@@ -723,17 +715,9 @@
         const toast = document.getElementById("toast");
 
         // ========== 工具函数 ==========
-        function randomBetween(min, max) {
-            return Math.random() * (max - min) + min;
-        }
-
-        function randomColor() {
-            return MACARON_COLORS[Math.floor(Math.random() * MACARON_COLORS.length)];
-        }
-
-        function randomType() {
-            return BUBLE_TYPES[Math.floor(Math.random() * BUBLE_TYPES.length)];
-        }
+        function randomBetween(min, max) { return Math.random() * (max - min) + min; }
+        function randomColor() { return MACARON_COLORS[Math.floor(Math.random() * MACARON_COLORS.length)]; }
+        function randomType() { return BUBLE_TYPES[Math.floor(Math.random() * BUBLE_TYPES.length)]; }
 
         // ========== 创建气泡 ==========
         function createBubble(text, delay) {
@@ -743,45 +727,23 @@
             var bubble = document.createElement("div");
             bubble.className = "bubble " + type;
             bubble.textContent = text;
+            bubble.style.left = randomBetween(1, 92) + "%";
+            bubble.style.setProperty("--duration", randomBetween(12, 24) + "s");
+            bubble.style.setProperty("--rot", randomBetween(-6, 6) + "deg");
+            bubble.style.fontSize = (15 * randomBetween(0.88, 1.08)) + "px";
 
-            // 随机水平位置（1% ~ 92%），让左右两边也有气泡
-            var leftPos = randomBetween(1, 92);
-            bubble.style.left = leftPos + "%";
-
-            // 随机动画时长（12s ~ 24s）
-            var duration = randomBetween(12, 24);
-            bubble.style.setProperty("--duration", duration + "s");
-
-            // 随机旋转角度
-            var rot = randomBetween(-6, 6);
-            bubble.style.setProperty("--rot", rot + "deg");
-
-            // 随机大小微调
-            var scale = randomBetween(0.88, 1.08);
-            bubble.style.fontSize = (15 * scale) + "px";
-
-            // 根据类型设置颜色
             if (type === "bubble-glass") {
-                // 玻璃卡片不需要背景色，自带半透明
+                // 玻璃卡片自带样式
             } else if (type === "bubble-gradient") {
-                // 渐变卡片使用渐变色
-                var gradIdx = Math.floor(Math.random() * GRADIENT_COLORS.length);
-                bubble.style.background = GRADIENT_COLORS[gradIdx];
+                bubble.style.background = GRADIENT_COLORS[Math.floor(Math.random() * GRADIENT_COLORS.length)];
             } else {
-                // 其他样式使用马卡龙色
                 bubble.style.setProperty("--b-bg", color.bg);
                 bubble.style.color = color.text;
             }
 
-            // 延迟出现
             bubble.style.animationDelay = delay + "s";
-
             bubbleContainer.appendChild(bubble);
-
-            // 动画结束后移除
-            bubble.addEventListener("animationend", function () {
-                bubble.remove();
-            });
+            bubble.addEventListener("animationend", function () { bubble.remove(); });
         }
 
         // ========== 装饰粒子 ==========
@@ -817,101 +779,69 @@
         function showToast(msg) {
             toast.textContent = msg || "寄语已飘向星空 ✨";
             toast.classList.add("show");
-            setTimeout(function () {
-                toast.classList.remove("show");
-            }, 2200);
+            setTimeout(function () { toast.classList.remove("show"); }, 2200);
         }
 
-        // ========== 事件绑定 ==========
+        // ========== 事件绑定（核心，不依赖 Supabase）==========
         btnLeave.addEventListener("click", openModal);
         btnCancel.addEventListener("click", closeModal);
+        modalMask.addEventListener("click", function (e) { if (e.target === modalMask) closeModal(); });
 
-        // 点击遮罩关闭
-        modalMask.addEventListener("click", function (e) {
-            if (e.target === modalMask) closeModal();
-        });
-
-        // 字数统计
         msgInput.addEventListener("input", function () {
             var len = msgInput.value.length;
             charNum.textContent = len;
-            if (len >= MAX_CHAR) {
-                charNum.parentElement.classList.add("warn");
-            } else {
-                charNum.parentElement.classList.remove("warn");
-            }
+            if (len >= MAX_CHAR) { charNum.parentElement.classList.add("warn"); }
+            else { charNum.parentElement.classList.remove("warn"); }
         });
 
-        // 提交寄语
         btnSubmit.addEventListener("click", async function () {
             var text = msgInput.value.trim();
             if (!text) {
                 msgInput.style.borderColor = "rgba(255, 107, 107, 0.7)";
-                setTimeout(function () {
-                    msgInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
-                }, 1000);
+                setTimeout(function () { msgInput.style.borderColor = "rgba(255, 255, 255, 0.2)"; }, 1000);
                 return;
             }
             closeModal();
             createBubble(text, 0);
             showToast();
-            // 保存到 Supabase
-            try {
-                await supabase.from('messages').insert([{ text: text }]);
-            } catch (e) {
-                console.error('保存失败:', e);
+            // 保存到 Supabase（可选）
+            if (db) {
+                try { await db.from('messages').insert([{ text: text }]); }
+                catch (e) { console.error('保存失败:', e); }
             }
         });
 
-        // 键盘快捷键：Enter 提交，Esc 关闭
         msgInput.addEventListener("keydown", function (e) {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                btnSubmit.click();
-            }
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); btnSubmit.click(); }
         });
-
-        document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape") closeModal();
-        });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
 
         // ========== 初始化 ==========
-        // 生成装饰粒子
         createParticles();
 
-        // 从 Supabase 加载历史寄语
-        var cloudMessages = []; // 存放云端寄语文本
+        // 加载云端寄语（可选）
+        var cloudMessages = [];
 
         async function loadCloudMessages() {
-            try {
-                var { data, error } = await supabase
-                    .from('messages')
-                    .select('text')
-                    .order('created_at', { ascending: true })
-                    .limit(100);
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    cloudMessages = data.map(function (m) { return m.text; });
-                    // 展示云端寄语
-                    cloudMessages.forEach(function (text, i) {
-                        createBubble(text, i * 0.8);
-                    });
+            if (db) {
+                try {
+                    var { data, error } = await db.from('messages').select('text').order('created_at', { ascending: true }).limit(100);
+                    if (error) throw error;
+                    if (data && data.length > 0) {
+                        cloudMessages = data.map(function (m) { return m.text; });
+                        cloudMessages.forEach(function (text, i) { createBubble(text, i * 0.8); });
+                    }
+                } catch (e) {
+                    console.warn('云端加载失败:', e.message);
                 }
-            } catch (e) {
-                console.warn('云端加载失败，使用预置寄语:', e.message);
             }
 
-            // 预置寄语：在云端寄语之后出现
             var baseDelay = cloudMessages.length > 0 ? cloudMessages.length * 0.8 + 0.5 : 0;
-            PRESET_MESSAGES.forEach(function (msg, i) {
-                createBubble(msg, baseDelay + i * 1.0);
-            });
+            PRESET_MESSAGES.forEach(function (msg, i) { createBubble(msg, baseDelay + i * 1.0); });
 
-            // 持续循环补充寄语（预置+云端），保持画面不空
             var allMessages = PRESET_MESSAGES.concat(cloudMessages);
             setInterval(function () {
-                var idx = Math.floor(Math.random() * allMessages.length);
-                createBubble(allMessages[idx], 0);
+                createBubble(allMessages[Math.floor(Math.random() * allMessages.length)], 0);
             }, 2800);
         }
 
